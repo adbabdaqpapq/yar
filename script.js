@@ -1,3 +1,7 @@
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+
 const writeButton = document.getElementById("write-button");
 
 writeButton.addEventListener("click", function() {
@@ -5,82 +9,48 @@ writeButton.addEventListener("click", function() {
 });
 
 
-const savedPosts = localStorage.getItem("posts");
-
-if (savedPosts !== null) {
-    const posts = JSON.parse(savedPosts);
-
+async function loadPosts() {
     const postList = document.getElementById("post-list");
 
-    posts.forEach(function(post) {
-        const postElement = document.createElement("div");
+    try {
+        const querySnapshot = await getDocs(collection(db, "posts"));
+
+        querySnapshot.forEach(function(doc) {
+            const post = {
+                id: doc.id,
+                ...doc.data()
+            };
+
+            const postElement = document.createElement("div");
 
 
-        const titleElement = document.createElement("h3");
-        titleElement.textContent = post.title;
+            const titleElement = document.createElement("h3");
+            titleElement.textContent = post.title;
 
-        titleElement.style.cursor = "pointer";
+            titleElement.style.cursor = "pointer";
 
-        titleElement.addEventListener("click", function() {
-            window.location.href = "post.html?id=" + post.id;
+            titleElement.addEventListener("click", function() {
+                window.location.href = "post.html?id=" + post.id;
+            });
+
+
+            const contentElement = document.createElement("p");
+            contentElement.textContent = post.content;
+
+
+            postElement.appendChild(titleElement);
+            postElement.appendChild(contentElement);
+
+            postList.appendChild(postElement);
         });
 
-
-        const contentElement = document.createElement("p");
-        contentElement.textContent = post.content;
-
-
-        const editButton = document.createElement("button");
-        editButton.textContent = "수정";
-
-        editButton.addEventListener("click", function() {
-            const newTitle = prompt("새 제목을 입력하세요.", post.title);
-            const newContent = prompt("새 내용을 입력하세요.", post.content);
-
-            if (newTitle === null || newContent === null) {
-                return;
-            }
-
-            if (newTitle === "" || newContent === "") {
-                alert("제목과 내용을 모두 입력해주세요.");
-                return;
-            }
-
-            post.title = newTitle;
-            post.content = newContent;
-
-            localStorage.setItem("posts", JSON.stringify(posts));
-
-            location.reload();
-        });
-
-
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "삭제";
-
-        deleteButton.addEventListener("click", function() {
-            const deleteConfirm = confirm("이 게시글을 삭제하시겠습니까?");
-
-            if (deleteConfirm === true) {
-                const newPosts = posts.filter(function(item) {
-                    return item.id !== post.id;
-                });
-
-                localStorage.setItem("posts", JSON.stringify(newPosts));
-
-                location.reload();
-            }
-        });
-
-
-        postElement.appendChild(titleElement);
-        postElement.appendChild(contentElement);
-        postElement.appendChild(editButton);
-        postElement.appendChild(deleteButton);
-
-        postList.appendChild(postElement);
-    });
+    } catch (error) {
+        console.error("게시글 불러오기 오류:", error);
+    }
 }
+
+
+loadPosts();
 
 
 const searchInput = document.getElementById("search-input");
