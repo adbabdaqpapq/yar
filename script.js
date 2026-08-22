@@ -24,10 +24,12 @@ const userArea =
     document.getElementById("user-area");
 
 
+// 로그인 상태 확인
 onAuthStateChanged(auth, function(user) {
 
     if (user) {
 
+        // 로그인 상태
         userArea.innerHTML = "";
 
         const userText =
@@ -55,7 +57,9 @@ onAuthStateChanged(auth, function(user) {
 
                     await signOut(auth);
 
-                    alert("로그아웃되었습니다.");
+                    alert(
+                        "로그아웃되었습니다."
+                    );
 
                     location.reload();
 
@@ -72,15 +76,24 @@ onAuthStateChanged(auth, function(user) {
         );
 
 
-        userArea.appendChild(userText);
-        userArea.appendChild(logoutButton);
+        userArea.appendChild(
+            userText
+        );
+
+        userArea.appendChild(
+            logoutButton
+        );
+
 
         writeButton.style.display =
             "inline-block";
 
+
     } else {
 
+        // 로그아웃 상태
         userArea.innerHTML = "";
+
 
         const loginButton =
             document.createElement("button");
@@ -100,9 +113,32 @@ onAuthStateChanged(auth, function(user) {
         );
 
 
+        const signupButton =
+            document.createElement("button");
+
+        signupButton.textContent =
+            "회원가입";
+
+
+        signupButton.addEventListener(
+            "click",
+            function() {
+
+                window.location.href =
+                    "signup.html";
+
+            }
+        );
+
+
         userArea.appendChild(
             loginButton
         );
+
+        userArea.appendChild(
+            signupButton
+        );
+
 
         writeButton.style.display =
             "none";
@@ -112,6 +148,7 @@ onAuthStateChanged(auth, function(user) {
 });
 
 
+// 글쓰기 버튼
 writeButton.addEventListener(
     "click",
     function() {
@@ -123,10 +160,13 @@ writeButton.addEventListener(
 );
 
 
+// 게시글 불러오기
 async function loadPosts() {
 
     const postList =
-        document.getElementById("post-list");
+        document.getElementById(
+            "post-list"
+        );
 
     postList.innerHTML = "";
 
@@ -135,7 +175,10 @@ async function loadPosts() {
 
         const querySnapshot =
             await getDocs(
-                collection(db, "posts")
+                collection(
+                    db,
+                    "posts"
+                )
             );
 
 
@@ -150,7 +193,9 @@ async function loadPosts() {
 
                 // 게시글과 삭제 버튼을 감싸는 영역
                 const postWrapper =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
 
                 postWrapper.className =
                     "post-wrapper";
@@ -158,15 +203,19 @@ async function loadPosts() {
 
                 // 게시글 테두리
                 const postElement =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
 
                 postElement.className =
                     "post-item";
 
 
-                // 제목
+                // 게시글 제목
                 const titleElement =
-                    document.createElement("h3");
+                    document.createElement(
+                        "h3"
+                    );
 
                 titleElement.textContent =
                     post.title;
@@ -208,7 +257,9 @@ async function loadPosts() {
                         user.email.split("@")[0];
 
 
-                    if (userId === ADMIN_ID) {
+                    if (
+                        userId === ADMIN_ID
+                    ) {
 
                         const deleteButton =
                             document.createElement(
@@ -334,6 +385,7 @@ async function loadPosts() {
 loadPosts();
 
 
+// 검색
 const searchInput =
     document.getElementById(
         "search-input"
