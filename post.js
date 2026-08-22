@@ -3,6 +3,8 @@ import { db, auth } from "./firebase.js";
 import {
     doc,
     getDoc,
+    updateDoc,
+    increment,
     collection,
     addDoc,
     query,
@@ -14,7 +16,9 @@ import {
 
 
 const postDetail =
-    document.getElementById("post-detail");
+    document.getElementById(
+        "post-detail"
+    );
 
 
 const urlParams =
@@ -72,6 +76,73 @@ async function loadPost() {
             postSnapshot.data();
 
 
+        // =====================================
+        // 조회수 처리
+        // =====================================
+
+        const viewStorageKey =
+            "yar_view_" + postId;
+
+
+        const lastViewed =
+            localStorage.getItem(
+                viewStorageKey
+            );
+
+
+        const currentTime =
+            Date.now();
+
+
+        const thirtyMinutes =
+            30 * 60 * 1000;
+
+
+        let currentViews =
+            post.views || 0;
+
+
+        if (
+            !lastViewed ||
+            currentTime -
+            Number(lastViewed)
+            >= thirtyMinutes
+        ) {
+
+            try {
+
+                await updateDoc(
+                    postRef,
+                    {
+                        views: increment(1)
+                    }
+                );
+
+
+                localStorage.setItem(
+                    viewStorageKey,
+                    currentTime.toString()
+                );
+
+
+                currentViews++;
+
+            } catch (error) {
+
+                console.error(
+                    "조회수 증가 오류:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // =====================================
+        // 제목
+        // =====================================
+
         const titleElement =
             document.createElement("h2");
 
@@ -79,8 +150,94 @@ async function loadPost() {
             post.title;
 
 
+        // =====================================
+        // 작성자
+        // =====================================
+
+        const authorElement =
+            document.createElement("p");
+
+        authorElement.textContent =
+            "작성자: " +
+            (
+                post.authorNickname ||
+                "알 수 없음"
+            );
+
+
+        // =====================================
+        // 날짜 및 시간
+        // =====================================
+
+        const dateElement =
+            document.createElement("p");
+
+
+        if (post.createdAt) {
+
+            const date =
+                post.createdAt.toDate();
+
+
+            const year =
+                date.getFullYear();
+
+
+            const month =
+                String(
+                    date.getMonth() + 1
+                ).padStart(2, "0");
+
+
+            const day =
+                String(
+                    date.getDate()
+                ).padStart(2, "0");
+
+
+            const hours =
+                String(
+                    date.getHours()
+                ).padStart(2, "0");
+
+
+            const minutes =
+                String(
+                    date.getMinutes()
+                ).padStart(2, "0");
+
+
+            dateElement.textContent =
+                `${year}/${month}/${day}-${hours}:${minutes}`;
+
+        } else {
+
+            dateElement.textContent =
+                "날짜 정보 없음";
+
+        }
+
+
+        // =====================================
+        // 조회수 표시
+        // =====================================
+
+        const viewsElement =
+            document.createElement("p");
+
+
+        viewsElement.textContent =
+            "조회수: " +
+            currentViews;
+
+
+        // =====================================
+        // 내용
+        // =====================================
+
         const contentElement =
             document.createElement("p");
+
 
         contentElement.textContent =
             post.content;
@@ -95,32 +252,34 @@ async function loadPost() {
 
 
         postDetail.appendChild(
+            authorElement
+        );
+
+
+        postDetail.appendChild(
+            dateElement
+        );
+
+
+        postDetail.appendChild(
+            viewsElement
+        );
+
+
+        postDetail.appendChild(
             contentElement
         );
 
 
-        const commentTitle =
-            document.createElement("h3");
+        // =====================================
+        // 댓글 입력 영역
+        // =====================================
 
-        commentTitle.textContent =
-            "댓글";
-
-
-        postDetail.appendChild(
-            commentTitle
-        );
-
-
-        const commentList =
+        const commentInputArea =
             document.createElement("div");
 
-        commentList.id =
-            "comment-list";
-
-
-        postDetail.appendChild(
-            commentList
-        );
+        commentInputArea.className =
+            "comment-input-area";
 
 
         const commentInput =
@@ -133,11 +292,6 @@ async function loadPost() {
             "댓글을 입력하세요.";
 
 
-        postDetail.appendChild(
-            commentInput
-        );
-
-
         const commentButton =
             document.createElement("button");
 
@@ -145,10 +299,211 @@ async function loadPost() {
             "댓글 등록";
 
 
-        postDetail.appendChild(
+        commentInputArea.appendChild(
+            commentInput
+        );
+
+
+        commentInputArea.appendChild(
             commentButton
         );
 
+
+        // =====================================
+        // 좋아요 영역
+        // =====================================
+
+        const likeArea =
+            document.createElement("div");
+
+        likeArea.className =
+            "like-area";
+
+
+        const likeButton =
+            document.createElement("button");
+
+        likeButton.textContent =
+            "좋아요";
+
+
+        const likeCount =
+            document.createElement("span");
+
+        likeCount.className =
+            "like-count";
+
+
+        likeArea.appendChild(
+            likeButton
+        );
+
+
+        likeArea.appendChild(
+            likeCount
+        );
+
+
+        // =====================================
+        // 좋아요 상태
+        // =====================================
+
+        const likeStorageKey =
+            "yar_like_" + postId;
+
+
+        let likeCountValue =
+            post.likes || 0;
+
+
+        let liked =
+            localStorage.getItem(
+                likeStorageKey
+            ) === "true";
+
+
+        function updateLikeDisplay() {
+
+            likeCount.textContent =
+                " " + likeCountValue;
+
+
+            if (liked) {
+
+                likeButton.textContent =
+                    "좋아요 취소";
+
+            } else {
+
+                likeButton.textContent =
+                    "좋아요";
+
+            }
+
+        }
+
+
+        updateLikeDisplay();
+
+
+        likeButton.addEventListener(
+            "click",
+            async function() {
+
+                try {
+
+                    if (!liked) {
+
+                        await updateDoc(
+                            postRef,
+                            {
+                                likes:
+                                    increment(1)
+                            }
+                        );
+
+
+                        likeCountValue++;
+
+                        liked = true;
+
+
+                        localStorage.setItem(
+                            likeStorageKey,
+                            "true"
+                        );
+
+
+                    } else {
+
+                        await updateDoc(
+                            postRef,
+                            {
+                                likes:
+                                    increment(-1)
+                            }
+                        );
+
+
+                        likeCountValue--;
+
+                        liked = false;
+
+
+                        localStorage.removeItem(
+                            likeStorageKey
+                        );
+
+                    }
+
+
+                    updateLikeDisplay();
+
+
+                } catch (error) {
+
+                    console.error(
+                        "좋아요 처리 오류:",
+                        error
+                    );
+
+
+                    alert(
+                        "좋아요 처리에 실패했습니다."
+                    );
+
+                }
+
+            }
+        );
+
+
+        // =====================================
+        // 댓글 제목
+        // =====================================
+
+        const commentTitle =
+            document.createElement("h3");
+
+        commentTitle.textContent =
+            "댓글";
+
+
+        // =====================================
+        // 댓글 목록
+        // =====================================
+
+        const commentList =
+            document.createElement("div");
+
+        commentList.id =
+            "comment-list";
+
+
+        // 입력창 → 좋아요 → 댓글 순서
+        postDetail.appendChild(
+            commentInputArea
+        );
+
+
+        postDetail.appendChild(
+            likeArea
+        );
+
+
+        postDetail.appendChild(
+            commentTitle
+        );
+
+
+        postDetail.appendChild(
+            commentList
+        );
+
+
+        // =====================================
+        // 댓글 등록
+        // =====================================
 
         commentButton.addEventListener(
             "click",
@@ -158,7 +513,9 @@ async function loadPost() {
                     commentInput.value.trim();
 
 
-                if (commentText === "") {
+                if (
+                    commentText === ""
+                ) {
 
                     alert(
                         "댓글을 입력해주세요."
@@ -211,6 +568,10 @@ async function loadPost() {
             }
         );
 
+
+        // =====================================
+        // 댓글 불러오기
+        // =====================================
 
         async function loadComments() {
 
@@ -309,7 +670,9 @@ async function loadPost() {
 
 
                                         if (!confirmed) {
+
                                             return;
+
                                         }
 
 

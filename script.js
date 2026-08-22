@@ -16,12 +16,24 @@ import {
 // 관리자 ID
 const ADMIN_ID = "adbabdaqpapq";
 
-
 const writeButton =
     document.getElementById("write-button");
 
 const userArea =
     document.getElementById("user-area");
+
+const searchInput =
+    document.getElementById("search-input");
+
+const searchButton =
+    document.getElementById("search-button");
+
+const sortSelect =
+    document.getElementById("sort-select");
+
+
+// 현재 게시글 목록
+let allPosts = [];
 
 
 // 로그인 상태 확인
@@ -29,7 +41,6 @@ onAuthStateChanged(auth, function(user) {
 
     if (user) {
 
-        // 로그인 상태
         userArea.innerHTML = "";
 
         const userText =
@@ -41,13 +52,11 @@ onAuthStateChanged(auth, function(user) {
         userText.textContent =
             "로그인: " + userId;
 
-
         const logoutButton =
             document.createElement("button");
 
         logoutButton.textContent =
             "로그아웃";
-
 
         logoutButton.addEventListener(
             "click",
@@ -57,9 +66,7 @@ onAuthStateChanged(auth, function(user) {
 
                     await signOut(auth);
 
-                    alert(
-                        "로그아웃되었습니다."
-                    );
+                    alert("로그아웃되었습니다.");
 
                     location.reload();
 
@@ -75,32 +82,21 @@ onAuthStateChanged(auth, function(user) {
             }
         );
 
-
-        userArea.appendChild(
-            userText
-        );
-
-        userArea.appendChild(
-            logoutButton
-        );
-
+        userArea.appendChild(userText);
+        userArea.appendChild(logoutButton);
 
         writeButton.style.display =
             "inline-block";
 
-
     } else {
 
-        // 로그아웃 상태
         userArea.innerHTML = "";
-
 
         const loginButton =
             document.createElement("button");
 
         loginButton.textContent =
             "로그인";
-
 
         loginButton.addEventListener(
             "click",
@@ -112,37 +108,12 @@ onAuthStateChanged(auth, function(user) {
             }
         );
 
-
-        const signupButton =
-            document.createElement("button");
-
-        signupButton.textContent =
-            "회원가입";
-
-
-        signupButton.addEventListener(
-            "click",
-            function() {
-
-                window.location.href =
-                    "signup.html";
-
-            }
-        );
-
-
         userArea.appendChild(
             loginButton
         );
 
-        userArea.appendChild(
-            signupButton
-        );
-
-
         writeButton.style.display =
             "none";
-
     }
 
 });
@@ -163,14 +134,6 @@ writeButton.addEventListener(
 // 게시글 불러오기
 async function loadPosts() {
 
-    const postList =
-        document.getElementById(
-            "post-list"
-        );
-
-    postList.innerHTML = "";
-
-
     try {
 
         const querySnapshot =
@@ -181,194 +144,22 @@ async function loadPosts() {
                 )
             );
 
+        allPosts = [];
 
         querySnapshot.forEach(
             function(postDoc) {
 
-                const post = {
+                allPosts.push({
                     id: postDoc.id,
                     ...postDoc.data()
-                };
-
-
-                // 게시글과 삭제 버튼을 감싸는 영역
-                const postWrapper =
-                    document.createElement(
-                        "div"
-                    );
-
-                postWrapper.className =
-                    "post-wrapper";
-
-
-                // 게시글 테두리
-                const postElement =
-                    document.createElement(
-                        "div"
-                    );
-
-                postElement.className =
-                    "post-item";
-
-
-                // 게시글 제목
-                const titleElement =
-                    document.createElement(
-                        "h3"
-                    );
-
-                titleElement.textContent =
-                    post.title;
-
-                titleElement.style.cursor =
-                    "pointer";
-
-
-                titleElement.addEventListener(
-                    "click",
-                    function() {
-
-                        window.location.href =
-                            "post.html?id=" +
-                            post.id;
-
-                    }
-                );
-
-
-                postElement.appendChild(
-                    titleElement
-                );
-
-
-                postWrapper.appendChild(
-                    postElement
-                );
-
-
-                // 관리자에게만 삭제 버튼 표시
-                const user =
-                    auth.currentUser;
-
-
-                if (user) {
-
-                    const userId =
-                        user.email.split("@")[0];
-
-
-                    if (
-                        userId === ADMIN_ID
-                    ) {
-
-                        const deleteButton =
-                            document.createElement(
-                                "button"
-                            );
-
-
-                        deleteButton.textContent =
-                            "삭제";
-
-                        deleteButton.className =
-                            "post-delete-button";
-
-
-                        deleteButton.addEventListener(
-                            "click",
-                            async function(event) {
-
-                                event.stopPropagation();
-
-
-                                const confirmed =
-                                    confirm(
-                                        "이 게시글과 모든 댓글을 삭제할까요?"
-                                    );
-
-
-                                if (!confirmed) {
-                                    return;
-                                }
-
-
-                                try {
-
-                                    // 댓글 삭제
-                                    const commentsRef =
-                                        collection(
-                                            db,
-                                            "posts",
-                                            post.id,
-                                            "comments"
-                                        );
-
-
-                                    const commentsSnapshot =
-                                        await getDocs(
-                                            commentsRef
-                                        );
-
-
-                                    for (
-                                        const commentDoc
-                                        of commentsSnapshot.docs
-                                    ) {
-
-                                        await deleteDoc(
-                                            commentDoc.ref
-                                        );
-
-                                    }
-
-
-                                    // 게시글 삭제
-                                    await deleteDoc(
-                                        doc(
-                                            db,
-                                            "posts",
-                                            post.id
-                                        )
-                                    );
-
-
-                                    postWrapper.remove();
-
-
-                                } catch (error) {
-
-                                    console.error(
-                                        "게시글 삭제 오류:",
-                                        error
-                                    );
-
-
-                                    alert(
-                                        "게시글 삭제에 실패했습니다."
-                                    );
-
-                                }
-
-                            }
-                        );
-
-
-                        postWrapper.appendChild(
-                            deleteButton
-                        );
-
-                    }
-
-                }
-
-
-                postList.appendChild(
-                    postWrapper
-                );
+                });
 
             }
         );
 
+
+        // 기본 정렬은 최신순
+        renderPosts();
 
     } catch (error) {
 
@@ -382,65 +173,406 @@ async function loadPosts() {
 }
 
 
-loadPosts();
+// 게시글 표시
+function renderPosts() {
+
+    const postList =
+        document.getElementById(
+            "post-list"
+        );
+
+    postList.innerHTML = "";
 
 
-// 검색
-const searchInput =
-    document.getElementById(
-        "search-input"
-    );
-
-const searchButton =
-    document.getElementById(
-        "search-button"
-    );
+    // 현재 정렬 방식
+    const sortType =
+        sortSelect.value;
 
 
-searchButton.addEventListener(
-    "click",
-    function() {
-
-        const searchText =
-            searchInput.value
-                .toLowerCase()
-                .trim();
+    // 원본 배열을 건드리지 않도록 복사
+    const sortedPosts =
+        [...allPosts];
 
 
-        const postElements =
-            document.querySelectorAll(
-                ".post-wrapper"
-            );
+    // 최신순
+    if (sortType === "latest") {
 
+        sortedPosts.sort(
+            function(a, b) {
 
-        postElements.forEach(
-            function(postWrapper) {
+                const timeA =
+                    a.createdAt
+                        ? a.createdAt.toMillis()
+                        : 0;
 
-                const title =
-                    postWrapper
-                        .querySelector("h3")
-                        .textContent
-                        .toLowerCase();
+                const timeB =
+                    b.createdAt
+                        ? b.createdAt.toMillis()
+                        : 0;
 
-
-                if (
-                    title.includes(
-                        searchText
-                    )
-                ) {
-
-                    postWrapper.style.display =
-                        "block";
-
-                } else {
-
-                    postWrapper.style.display =
-                        "none";
-
-                }
+                // 최신 글이 위로
+                return timeB - timeA;
 
             }
         );
 
     }
+
+
+    // 인기순
+    else if (sortType === "popular") {
+
+        sortedPosts.sort(
+            function(a, b) {
+
+                const likesA =
+                    a.likesCount || 0;
+
+                const likesB =
+                    b.likesCount || 0;
+
+                return likesB - likesA;
+
+            }
+        );
+
+    }
+
+
+    // 조회수순
+    else if (sortType === "views") {
+
+        sortedPosts.sort(
+            function(a, b) {
+
+                const viewsA =
+                    a.views || 0;
+
+                const viewsB =
+                    b.views || 0;
+
+                return viewsB - viewsA;
+
+            }
+        );
+
+    }
+
+
+    // 검색어
+    const searchText =
+        searchInput.value
+            .toLowerCase()
+            .trim();
+
+
+    sortedPosts.forEach(
+        function(post) {
+
+            // 검색어가 있으면 제목 검색
+            if (
+                searchText !== "" &&
+                !post.title
+                    .toLowerCase()
+                    .includes(searchText)
+            ) {
+
+                return;
+
+            }
+
+
+            // 게시글 전체 영역
+            const postWrapper =
+                document.createElement("div");
+
+            postWrapper.className =
+                "post-wrapper";
+
+
+            // 게시글 테두리
+            const postElement =
+                document.createElement("div");
+
+            postElement.className =
+                "post-item";
+
+
+            // 제목 + 오른쪽 정보
+            const postHeader =
+                document.createElement("div");
+
+            postHeader.className =
+                "post-header";
+
+
+            // 제목
+            const titleElement =
+                document.createElement("h3");
+
+            titleElement.textContent =
+                post.title;
+
+            titleElement.addEventListener(
+                "click",
+                function() {
+
+                    window.location.href =
+                        "post.html?id=" +
+                        post.id;
+
+                }
+            );
+
+
+            // 오른쪽 정보 영역
+            const postInfo =
+                document.createElement("div");
+
+            postInfo.className =
+                "post-info";
+
+
+            // 날짜
+            const dateElement =
+                document.createElement("span");
+
+            dateElement.className =
+                "post-date";
+
+
+            if (post.createdAt) {
+
+                const date =
+                    post.createdAt.toDate();
+
+                const year =
+                    date.getFullYear();
+
+                const month =
+                    String(
+                        date.getMonth() + 1
+                    ).padStart(2, "0");
+
+                const day =
+                    String(
+                        date.getDate()
+                    ).padStart(2, "0");
+
+                const hours =
+                    String(
+                        date.getHours()
+                    ).padStart(2, "0");
+
+                const minutes =
+                    String(
+                        date.getMinutes()
+                    ).padStart(2, "0");
+
+                dateElement.textContent =
+                    `${year}/${month}/${day}-${hours}:${minutes}`;
+
+            }
+
+
+            // 조회수
+            const viewElement =
+                document.createElement("span");
+
+            viewElement.className =
+                "post-view-count";
+
+            viewElement.textContent =
+                "조회 " +
+                (post.views || 0);
+
+
+            postInfo.appendChild(
+                dateElement
+            );
+
+            postInfo.appendChild(
+                viewElement
+            );
+
+
+            postHeader.appendChild(
+                titleElement
+            );
+
+            postHeader.appendChild(
+                postInfo
+            );
+
+
+            postElement.appendChild(
+                postHeader
+            );
+
+
+            postWrapper.appendChild(
+                postElement
+            );
+
+
+            // 관리자 삭제 버튼
+            const user =
+                auth.currentUser;
+
+            if (user) {
+
+                const userId =
+                    user.email.split("@")[0];
+
+                if (
+                    userId === ADMIN_ID
+                ) {
+
+                    const deleteButton =
+                        document.createElement(
+                            "button"
+                        );
+
+                    deleteButton.textContent =
+                        "삭제";
+
+                    deleteButton.className =
+                        "post-delete-button";
+
+
+                    deleteButton.addEventListener(
+                        "click",
+                        async function(event) {
+
+                            event.stopPropagation();
+
+
+                            const confirmed =
+                                confirm(
+                                    "이 게시글과 모든 댓글을 삭제할까요?"
+                                );
+
+
+                            if (!confirmed) {
+
+                                return;
+
+                            }
+
+
+                            try {
+
+                                // 댓글 삭제
+                                const commentsRef =
+                                    collection(
+                                        db,
+                                        "posts",
+                                        post.id,
+                                        "comments"
+                                    );
+
+                                const commentsSnapshot =
+                                    await getDocs(
+                                        commentsRef
+                                    );
+
+
+                                for (
+                                    const commentDoc
+                                    of commentsSnapshot.docs
+                                ) {
+
+                                    await deleteDoc(
+                                        commentDoc.ref
+                                    );
+
+                                }
+
+
+                                // 게시글 삭제
+                                await deleteDoc(
+                                    doc(
+                                        db,
+                                        "posts",
+                                        post.id
+                                    )
+                                );
+
+
+                                // 화면에서 제거
+                                allPosts =
+                                    allPosts.filter(
+                                        function(item) {
+
+                                            return (
+                                                item.id !==
+                                                post.id
+                                            );
+
+                                        }
+                                    );
+
+
+                                renderPosts();
+
+
+                            } catch (error) {
+
+                                console.error(
+                                    "게시글 삭제 오류:",
+                                    error
+                                );
+
+                                alert(
+                                    "게시글 삭제에 실패했습니다."
+                                );
+
+                            }
+
+                        }
+                    );
+
+
+                    postWrapper.appendChild(
+                        deleteButton
+                    );
+
+                }
+
+            }
+
+
+            postList.appendChild(
+                postWrapper
+            );
+
+        }
+    );
+
+}
+
+
+// 정렬 변경
+sortSelect.addEventListener(
+    "change",
+    function() {
+
+        renderPosts();
+
+    }
 );
+
+
+// 검색
+searchButton.addEventListener(
+    "click",
+    function() {
+
+        renderPosts();
+
+    }
+);
+
+
+// 게시글 불러오기
+loadPosts();

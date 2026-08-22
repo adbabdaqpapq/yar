@@ -19,11 +19,9 @@
         <button id="write-button">글쓰기</button>
     </div>
 
-    <h2>인기 게시글</h2>
-
     <div>
         <h3>2026/8/20</h3>
-        <p>시작일</p>
+        <h3>시작일</h3>
     </div>
 
     <h2>최신 게시글</h2>
@@ -36,12 +34,15 @@
 
     <button id="search-button">검색</button>
 
+    <select id="sort-select">
+        <option value="latest">최신순</option>
+        <option value="popular">인기순</option>
+        <option value="views">조회수순</option>
+    </select>
+
     <div id="post-list"></div>
 
-    <script
-        type="module"
-        src="script.js"
-    ></script>
+    <script type="module" src="script.js"></script>
 
 </body>
 
