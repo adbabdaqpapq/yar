@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
 
-const emailInput = document.getElementById("email");
+const idInput = document.getElementById("user-id");
 const passwordInput = document.getElementById("password");
 
 const loginButton = document.getElementById("login-button");
@@ -14,22 +14,29 @@ const signupButton = document.getElementById("signup-button");
 const guestButton = document.getElementById("guest-button");
 
 
-// 로그인
-loginButton.addEventListener("click", async function () {
+function makeFirebaseEmail(userId) {
+    return userId.trim().toLowerCase() + "@yar-community.local";
+}
 
-    const email = emailInput.value.trim();
+
+// 로그인
+loginButton.addEventListener("click", async function() {
+
+    const userId = idInput.value.trim();
     const password = passwordInput.value;
 
-    if (email === "" || password === "") {
-        alert("이메일과 비밀번호를 입력해주세요.");
+    if (userId === "" || password === "") {
+        alert("ID와 비밀번호를 입력해주세요.");
         return;
     }
 
     try {
 
+        const firebaseEmail = makeFirebaseEmail(userId);
+
         await signInWithEmailAndPassword(
             auth,
-            email,
+            firebaseEmail,
             password
         );
 
@@ -41,7 +48,7 @@ loginButton.addEventListener("click", async function () {
 
         console.error("로그인 오류:", error);
 
-        alert("로그인에 실패했습니다.\n이메일 또는 비밀번호를 확인해주세요.");
+        alert("ID 또는 비밀번호가 올바르지 않습니다.");
 
     }
 
@@ -49,21 +56,33 @@ loginButton.addEventListener("click", async function () {
 
 
 // 회원가입
-signupButton.addEventListener("click", async function () {
+signupButton.addEventListener("click", async function() {
 
-    const email = emailInput.value.trim();
+    const userId = idInput.value.trim();
     const password = passwordInput.value;
 
-    if (email === "" || password === "") {
-        alert("이메일과 비밀번호를 입력해주세요.");
+    if (userId === "" || password === "") {
+        alert("ID와 비밀번호를 입력해주세요.");
+        return;
+    }
+
+    if (userId.length < 4) {
+        alert("ID는 4자 이상 입력해주세요.");
+        return;
+    }
+
+    if (password.length < 6) {
+        alert("비밀번호는 6자 이상 입력해주세요.");
         return;
     }
 
     try {
 
+        const firebaseEmail = makeFirebaseEmail(userId);
+
         await createUserWithEmailAndPassword(
             auth,
-            email,
+            firebaseEmail,
             password
         );
 
@@ -75,7 +94,11 @@ signupButton.addEventListener("click", async function () {
 
         console.error("회원가입 오류:", error);
 
-        alert("회원가입에 실패했습니다.");
+        if (error.code === "auth/email-already-in-use") {
+            alert("이미 사용 중인 ID입니다.");
+        } else {
+            alert("회원가입에 실패했습니다.");
+        }
 
     }
 
@@ -83,7 +106,7 @@ signupButton.addEventListener("click", async function () {
 
 
 // 로그인하지 않고 둘러보기
-guestButton.addEventListener("click", function () {
+guestButton.addEventListener("click", function() {
 
     window.location.href = "index.html";
 
